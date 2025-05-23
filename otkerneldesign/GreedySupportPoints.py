@@ -297,3 +297,59 @@ class GreedySupportPoints:
         ax.legend(loc="best")
         plt.close()
         return fig, plot_data
+
+    def draw_mmd_convergence(self, design_indices):
+        """
+        Draws the convergence of the MMD between a discrete measure and the target measure.
+
+        Parameters
+        ----------
+        design_indices : list of positive int
+                         List of the indices of the selected points
+                         in the Sample of candidate points
+
+        Returns
+        -------
+        fig : matplotlib.Figure
+                    MMD convergence of the design of experiments
+        
+        plot_data : data used to plot the figure
+        """
+        mmds = []
+        sizes = range(1, len(design_indices))
+        for i in sizes:
+            mmds.append(self.compute_mmd(design_indices[:i]))
+        fig, ax = plt.subplots(1, figsize=(9, 6))
+        plot_data, = ax.plot(sizes, mmds, label=self._method_label)
+        ax.set_title('MMD convergence')
+        ax.set_xlabel('design size ($n$)')
+        ax.set_ylabel('MMD')
+        ax.legend(loc='best')
+        plt.close()
+        return fig, plot_data
+
+    def get_indices(self, sample):
+        """
+        When provided a subsample of the candidate set, returns the indices of its points in the candidate set.
+
+        Parameters
+        ----------
+        sample : 2-d list of float
+            A subsample of the candidate set.
+
+        Returns
+        -------
+        indices : list of int
+            Indices of the points of the sample within the candidate set.
+        """
+        sample = np.array(sample)
+        if len(sample.shape) != 2:
+            raise ValueError("Not a sample: shape is {} instead of 2.".format(len(sample.shape)))
+        candidate_array = np.array(self._candidate_set) # convert to numpy array so np.where works
+        indices = []
+        for sample_index, pt in enumerate(sample):
+            index = np.where((candidate_array==pt).prod(axis=1))[0]
+            if len(index) != 1:
+                raise ValueError("The point {}, with index {} in the sample, is not in the candidate set.".format(pt, sample_index))
+            indices.extend(index)
+        return indices
